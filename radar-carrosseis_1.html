@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Carrosséis — protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A1517;
+  --panel:#0F2023;
+  --panel-2:#132A2E;
+  --line:#1E3B40;
+  --line-soft:#162E32;
+  --bone:#E9E4D7;
+  --bone-dim:#9CACAC;
+  --bone-faint:#5E7375;
+  --amber:#F0A93B;
+  --coral:#E4674F;
+  --sage:#8FB89A;
+
+  --serif:"Instrument Serif",Georgia,serif;
+  --sans:"IBM Plex Sans",sans-serif;
+  --mono:"IBM Plex Mono",monospace;
+
+  --pad:clamp(16px,3vw,34px);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ink);color:var(--bone);
+  font-family:var(--sans);font-size:15px;line-height:1.5;
+  background-image:
+    radial-gradient(1100px 500px at 82% -10%, rgba(240,169,59,.09), transparent 65%),
+    radial-gradient(700px 400px at 0% 100%, rgba(228,103,79,.06), transparent 70%);
+  background-attachment:fixed;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.035;
+  background-image:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px);
+}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.wrap{max-width:1340px;margin:0 auto;padding:0 var(--pad)}
+
+/* ---------- eyebrow bar ---------- */
+.topbar{
+  display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;
+  padding:14px 0 13px;border-bottom:1px solid var(--line-soft);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--bone-faint);
+}
+.topbar strong{color:var(--bone-dim);font-weight:500}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block;
+  margin-right:7px;box-shadow:0 0 0 0 rgba(240,169,59,.6);animation:pulse 2.6s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(240,169,59,0)}100%{box-shadow:0 0 0 0 rgba(240,169,59,0)}}
+.topbar .spacer{margin-left:auto}
+
+/* ---------- hero ---------- */
+.hero{padding:clamp(30px,6vw,64px) 0 clamp(22px,4vw,34px);max-width:820px}
+.hero h1{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(42px,8.2vw,86px);line-height:.93;letter-spacing:-.02em;margin:0;
+}
+.hero h1 em{font-style:italic;color:var(--amber)}
+.hero p{
+  margin:20px 0 0;max-width:56ch;color:var(--bone-dim);font-size:clamp(15px,1.4vw,17px);
+}
+.hero p b{color:var(--bone);font-weight:600}
+
+/* ---------- stat strip ---------- */
+.strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.strip div{padding:16px 20px 15px;border-left:1px solid var(--line-soft)}
+.strip div:first-child{border-left:0;padding-left:0}
+.strip dt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--bone-faint);margin:0 0 6px}
+.strip dd{margin:0;font-family:var(--mono);font-size:clamp(19px,2.4vw,27px);font-weight:500;
+  letter-spacing:-.02em}
+.strip .hi{color:var(--amber)}
+@media(max-width:720px){
+  .strip{grid-template-columns:1fr 1fr}
+  .strip div{border-left:1px solid var(--line-soft);padding-left:16px}
+  .strip div:nth-child(odd){border-left:0;padding-left:0}
+  .strip div:nth-child(n+3){border-top:1px solid var(--line-soft)}
+}
+
+/* ---------- controls ---------- */
+.controls{display:flex;flex-wrap:wrap;gap:22px 34px;align-items:flex-end;padding:24px 0 20px}
+.ctl{display:flex;flex-direction:column;gap:9px}
+.ctl > span{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-faint)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;
+  background:transparent;color:var(--bone-dim);border:1px solid var(--line);
+  padding:7px 12px;cursor:pointer;transition:.16s;border-radius:2px;
+}
+.chip:hover{border-color:var(--bone-faint);color:var(--bone)}
+.chip[aria-pressed="true"]{background:var(--bone);color:var(--ink);border-color:var(--bone);font-weight:600}
+.refresh{
+  margin-left:auto;display:flex;align-items:center;gap:10px;background:transparent;
+  border:1px solid var(--amber);color:var(--amber);font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.12em;text-transform:uppercase;padding:11px 16px;cursor:pointer;
+  transition:.18s;border-radius:2px;
+}
+.refresh:hover{background:var(--amber);color:var(--ink)}
+.refresh .ic{display:inline-block;transition:transform .6s}
+.refresh.spin .ic{transform:rotate(360deg)}
+
+/* ---------- main grid ---------- */
+.board{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:34px;padding-bottom:70px;align-items:start}
+@media(max-width:1080px){.board{grid-template-columns:1fr;gap:26px}}
+
+/* ---------- ranking rows ---------- */
+.rows{border-top:1px solid var(--line)}
+.row{
+  display:grid;grid-template-columns:38px 62px minmax(0,1fr) 96px 108px;
+  gap:16px;align-items:center;width:100%;text-align:left;
+  background:transparent;border:0;border-bottom:1px solid var(--line-soft);
+  padding:14px 10px 14px 0;cursor:pointer;color:inherit;font:inherit;
+  transition:background .16s;position:relative;
+}
+.row:hover{background:var(--panel)}
+.row[aria-current="true"]{background:var(--panel-2)}
+.row[aria-current="true"]::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--amber);
+}
+.row .rk{font-family:var(--mono);font-size:12px;color:var(--bone-faint);padding-left:10px}
+.row[aria-current="true"] .rk{color:var(--amber)}
+
+.thumb{
+  aspect-ratio:4/5;border-radius:3px;overflow:hidden;display:flex;flex-direction:column;
+  justify-content:center;padding:7px;font-size:6.5px;line-height:1.15;font-weight:700;
+  border:1px solid rgba(255,255,255,.08);
+}
+.thumb i{display:block;font-family:var(--mono);font-style:normal;font-size:4.5px;
+  letter-spacing:.1em;opacity:.7;margin-bottom:3px;text-transform:uppercase}
+
+.meta{min-width:0}
+.meta .h{font-weight:600;font-size:14.5px;letter-spacing:-.01em;margin:0 0 4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta .s{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:11px;color:var(--bone-faint)}
+.meta .s .at{color:var(--bone-dim)}
+.tier{border:1px solid var(--line);padding:1px 5px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px}
+.tier.nano{color:var(--sage);border-color:rgba(143,184,154,.4)}
+.tier.micro{color:var(--amber);border-color:rgba(240,169,59,.4)}
+.tier.medio{color:#7FA8C4;border-color:rgba(127,168,196,.4)}
+.tier.grande{color:var(--coral);border-color:rgba(228,103,79,.4)}
+
+.spark{display:block;width:96px;height:30px;overflow:visible}
+.score{text-align:right;font-family:var(--mono);padding-right:4px}
+.score b{display:block;font-size:19px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.score span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--bone-faint)}
+.score.up b{color:var(--amber)}
+.score.hot b{color:var(--coral)}
+.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{background:rgba(240,169,59,.22)}100%{background:transparent}}
+
+@media(max-width:640px){
+  .row{grid-template-columns:26px 50px minmax(0,1fr) 84px;padding-right:4px;gap:12px}
+  .spark{display:none}
+}
+
+/* ---------- inspector ---------- */
+.inspector{position:sticky;top:20px;border:1px solid var(--line);background:var(--panel);border-radius:3px}
+@media(max-width:1080px){.inspector{position:static}}
+.insp-head{padding:15px 18px 13px;border-bottom:1px solid var(--line-soft);
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.insp-head .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-faint)}
+.insp-head a{color:var(--amber);font-family:var(--mono);font-size:11px;text-decoration:none;
+  border-bottom:1px solid rgba(240,169,59,.35);white-space:nowrap}
+.insp-head a:hover{border-bottom-color:var(--amber)}
+
+/* the signature: physical slide stack */
+.stage{padding:30px 18px 18px;display:flex;justify-content:center}
+.stack{position:relative;width:212px;aspect-ratio:4/5;perspective:1200px}
+.slide{
+  position:absolute;inset:0;border-radius:5px;padding:22px 20px;
+  display:flex;flex-direction:column;justify-content:center;gap:9px;
+  border:1px solid rgba(0,0,0,.25);
+  box-shadow:0 18px 40px -14px rgba(0,0,0,.75);
+  transition:transform .42s cubic-bezier(.4,.05,.2,1), opacity .42s;
+  will-change:transform;
+}
+.slide .kick{font-family:var(--mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;opacity:.65}
+.slide .ttl{font-family:var(--serif);font-size:24px;line-height:1.02;letter-spacing:-.015em}
+.slide .bd{font-size:10.5px;line-height:1.45;opacity:.82}
+.slide .num{position:absolute;right:12px;bottom:10px;font-family:var(--mono);font-size:8px;opacity:.5}
+.slide[data-pos="0"]{transform:translate3d(0,0,0) scale(1);opacity:1;z-index:4}
+.slide[data-pos="1"]{transform:translate3d(11px,-9px,-60px) scale(.965);opacity:.55;z-index:3}
+.slide[data-pos="2"]{transform:translate3d(21px,-17px,-120px) scale(.93);opacity:.28;z-index:2}
+.slide[data-pos="3"]{transform:translate3d(29px,-24px,-170px) scale(.9);opacity:.12;z-index:1}
+.slide[data-pos="x"]{transform:translate3d(-56px,10px,-40px) scale(.94) rotate(-4deg);opacity:0;z-index:0;pointer-events:none}
+
+.flip{display:flex;align-items:center;justify-content:center;gap:14px;padding:0 18px 18px}
+.flip button{
+  background:transparent;border:1px solid var(--line);color:var(--bone-dim);
+  width:34px;height:30px;cursor:pointer;font-size:13px;border-radius:2px;transition:.15s;
+}
+.flip button:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
+.flip button:disabled{opacity:.28;cursor:default}
+.dots{display:flex;gap:5px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--line);transition:.2s}
+.dot.on{background:var(--amber);transform:scale(1.5)}
+.flip .cnt{font-family:var(--mono);font-size:10.5px;color:var(--bone-faint);min-width:38px;text-align:center}
+
+.attrs{border-top:1px solid var(--line-soft)}
+.attrs h3{margin:0;padding:13px 18px 10px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--bone-faint);font-weight:400}
+.attrs dl{margin:0;padding:0 18px 16px;display:grid;grid-template-columns:1fr 1fr;gap:13px 14px}
+.attrs dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--bone-faint);margin-bottom:3px}
+.attrs dd{margin:0;font-size:12.5px;font-weight:500;line-height:1.3}
+.swatches{display:flex;gap:3px;margin-top:5px}
+.sw{width:15px;height:15px;border-radius:2px;border:1px solid rgba(255,255,255,.14)}
+.attrs .full{grid-column:1/-1}
+.numbers{border-top:1px solid var(--line-soft);padding:14px 18px 17px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.numbers div{font-family:var(--mono)}
+.numbers dt{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--bone-faint);margin-bottom:4px}
+.numbers dd{margin:0;font-size:15px;font-weight:500}
+.note{padding:12px 18px 15px;border-top:1px solid var(--line-soft);font-size:11.5px;
+  color:var(--bone-faint);line-height:1.45}
+.note b{color:var(--bone-dim);font-weight:600}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line-soft);padding:24px 0 60px;color:var(--bone-faint);font-size:12.5px}
+footer p{margin:0 0 8px;max-width:70ch}
+footer code{font-family:var(--mono);font-size:11.5px;color:var(--bone-dim)}
+
+/* ---------- gate / entrada por passkey ---------- */
+body.locked{overflow:hidden}
+body.locked .wrap{display:none}
+body:not(.locked) #gate{display:none}
+
+#gate{
+  position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:var(--ink);
+  background-image:
+    radial-gradient(900px 600px at 70% 10%, rgba(240,169,59,.10), transparent 65%),
+    radial-gradient(600px 500px at 10% 95%, rgba(228,103,79,.07), transparent 70%);
+}
+.ghosts{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ghost{
+  position:absolute;width:150px;aspect-ratio:4/5;border-radius:6px;
+  border:1px solid rgba(233,228,215,.09);opacity:.13;
+  padding:14px;font-family:var(--serif);font-size:15px;line-height:1.05;color:var(--bone);
+  animation:drift 22s ease-in-out infinite;
+}
+.ghost:nth-child(1){top:14%;left:8%;transform:rotate(-7deg);animation-delay:-2s}
+.ghost:nth-child(2){bottom:12%;right:11%;transform:rotate(6deg);animation-delay:-9s}
+.ghost:nth-child(3){top:8%;right:24%;transform:rotate(-3deg);animation-delay:-15s;width:118px}
+@keyframes drift{0%,100%{translate:0 0}50%{translate:0 -18px}}
+@media(max-width:760px){.ghost{display:none}}
+
+.gate-card{position:relative;width:100%;max-width:392px;text-align:center}
+.gate-card .brand{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--bone-faint);margin:0 0 18px;
+}
+.gate-card h2{
+  font-family:var(--serif);font-weight:400;font-size:clamp(34px,7vw,46px);line-height:.95;
+  letter-spacing:-.02em;margin:0 0 12px;
+}
+.gate-card h2 em{font-style:italic;color:var(--amber)}
+.gate-card .sub{color:var(--bone-dim);font-size:14px;margin:0 auto 30px;max-width:31ch}
+
+.scanner{
+  width:104px;height:104px;margin:0 auto 26px;position:relative;border-radius:16px;
+  border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;
+  transition:border-color .3s, background .3s;
+}
+.scanner svg{width:52px;height:52px;stroke:var(--bone-faint);fill:none;
+  stroke-width:1.4;stroke-linecap:round;transition:stroke .3s}
+.scanner .sweep{
+  position:absolute;left:0;right:0;height:2px;top:-2px;opacity:0;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent);
+  box-shadow:0 0 14px 3px rgba(240,169,59,.5);
+}
+.scanner .tick{position:absolute;inset:0;display:grid;place-items:center;
+  font-size:36px;color:var(--ink);opacity:0;transition:opacity .25s}
+
+[data-state="scanning"] .scanner{border-color:var(--amber)}
+[data-state="scanning"] .scanner svg{stroke:var(--amber)}
+[data-state="scanning"] .sweep{opacity:1;animation:sweep 1.15s ease-in-out infinite}
+@keyframes sweep{0%{top:-2px}100%{top:104px}}
+[data-state="ok"] .scanner{border-color:var(--amber);background:var(--amber)}
+[data-state="ok"] .scanner svg{opacity:0}
+[data-state="ok"] .scanner .tick{opacity:1}
+[data-state="err"] .scanner{border-color:var(--coral)}
+[data-state="err"] .scanner svg{stroke:var(--coral)}
+
+.gate-btn{
+  width:100%;background:var(--amber);color:var(--ink);border:1px solid var(--amber);
+  font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:.01em;
+  padding:14px 18px;cursor:pointer;border-radius:3px;transition:.16s;
+}
+.gate-btn:hover{background:#F7BC5C;border-color:#F7BC5C}
+.gate-btn:disabled{opacity:.4;cursor:default}
+.gate-btn.ghostbtn{background:transparent;color:var(--bone-dim);border-color:var(--line);font-weight:500}
+.gate-btn.ghostbtn:hover{border-color:var(--bone-faint);color:var(--bone);background:transparent}
+
+.status{
+  min-height:34px;margin:16px 0 0;font-family:var(--mono);font-size:11.5px;line-height:1.45;
+  letter-spacing:.02em;color:var(--bone-faint);
+}
+.status.bad{color:var(--coral)}
+.status.good{color:var(--amber)}
+
+.gate-alt{margin-top:22px;padding-top:20px;border-top:1px solid var(--line-soft)}
+.linkish{
+  background:none;border:0;padding:0;cursor:pointer;color:var(--bone-dim);font-family:var(--mono);
+  font-size:11px;letter-spacing:.06em;border-bottom:1px solid var(--line);
+}
+.linkish:hover{color:var(--amber);border-bottom-color:var(--amber)}
+.gate-alt .row2{display:flex;gap:8px;margin-top:14px}
+.gate-alt input{
+  flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);color:var(--bone);
+  font-family:var(--mono);font-size:12px;padding:11px 12px;border-radius:3px;
+}
+.gate-alt input::placeholder{color:var(--bone-faint)}
+.gate-alt input:focus{border-color:var(--amber);outline:none}
+.gate-alt .send{
+  background:transparent;border:1px solid var(--line);color:var(--bone-dim);cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  padding:0 14px;border-radius:3px;transition:.15s;
+}
+.gate-alt .send:hover{border-color:var(--amber);color:var(--amber)}
+.hidden{display:none!important}
+.gate-foot{
+  margin:26px 0 0;font-family:var(--mono);font-size:10px;line-height:1.6;letter-spacing:.04em;
+  color:var(--bone-faint);opacity:.75;
+}
+
+.lock{
+  background:none;border:0;padding:0;margin-left:20px;cursor:pointer;color:var(--bone-faint);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  border-bottom:1px solid var(--line);
+}
+.lock:hover{color:var(--amber);border-bottom-color:var(--amber)}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;transition-duration:.001s!important}
+  [data-state="scanning"] .sweep{opacity:1;top:51px;animation:none}
+}
+</style>
+</head>
+<body class="locked">
+
+<section id="gate" data-state="idle" aria-label="Entrada">
+  <div class="ghosts" aria-hidden="true">
+    <div class="ghost">3 erros na calagem que custam 12 sacas/ha</div>
+    <div class="ghost">Ansiedade não é falta de fé</div>
+    <div class="ghost">Sua planilha de custo está mentindo</div>
+  </div>
+
+  <div class="gate-card">
+    <p class="brand">radar de carrosséis</p>
+    <h2 id="gateTitle">Entre com o <em>seu aparelho.</em></h2>
+    <p class="sub" id="gateSub">Sem senha. O celular confirma quem você é e manda só a assinatura.</p>
+
+    <div class="scanner" aria-hidden="true">
+      <div class="sweep"></div>
+      <svg viewBox="0 0 40 40">
+        <path d="M6 14V9a3 3 0 0 1 3-3h5M26 6h5a3 3 0 0 1 3 3v5M34 26v5a3 3 0 0 1-3 3h-5M14 34H9a3 3 0 0 1-3-3v-5"/>
+        <path d="M15 17v2M25 17v2M20 17v5M16 27c1.6 1.6 6.8 1.6 8 0"/>
+      </svg>
+      <span class="tick">✓</span>
+    </div>
+
+    <button class="gate-btn" id="gateGo">Entrar com <span id="bioName">Face ID</span></button>
+    <p class="status" id="gateStatus" role="status" aria-live="polite">Toque para abrir a verificação do sistema.</p>
+
+    <div class="gate-alt">
+      <button class="linkish" id="toggleMode">primeiro acesso? cadastrar este aparelho</button>
+      <div class="row2">
+        <input type="email" id="mail" placeholder="voce@dominio.com.br" aria-label="E-mail para link de acesso" autocomplete="email">
+        <button class="send" id="sendLink">enviar link</button>
+      </div>
+      <button class="gate-btn ghostbtn hidden" id="fakeLink" style="margin-top:10px">Abrir o link recebido (simulado)</button>
+    </div>
+
+    <p class="gate-foot">Mock de interface. Em produção esta tela chama<br><code>supabase.auth.signInWithPasskey()</code> e nada aqui muda.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="topbar">
+    <span><span class="pulse"></span>monitorando <strong>312 perfis</strong></span>
+    <span>snapshot a cada <strong>6h</strong></span>
+    <span>última leitura <strong id="lastRead">14:20</strong></span>
+    <span class="spacer">protótipo · dados simulados</span>
+    <button class="lock" id="btnLock">bloquear</button>
+  </div>
+
+  <header class="hero">
+    <h1>Curtida não é <em>sinal.</em></h1>
+    <p>Um carrossel com 9 mil likes num perfil de 600 mil seguidores é rotina. Um com 2 mil likes num perfil de 4 mil é um <b>evento</b>. O ranking abaixo mede cada post contra a média histórica do próprio perfil — e mostra o criativo, não só o número.</p>
+  </header>
+
+  <dl class="strip">
+    <div><dt>carrosséis lidos</dt><dd>1.847</dd></div>
+    <div><dt>picos em 24h</dt><dd class="hi" id="statSpikes">4</dd></div>
+    <div><dt>próximo snapshot</dt><dd id="statNext">02:14</dd></div>
+    <div><dt>maior desvio hoje</dt><dd class="hi" id="statTop">6,9×</dd></div>
+  </dl>
+
+  <div class="controls">
+    <div class="ctl">
+      <span>faixa do perfil</span>
+      <div class="chips" id="fTier">
+        <button class="chip" data-v="all" aria-pressed="true">todas</button>
+        <button class="chip" data-v="nano" aria-pressed="false">nano &lt;10k</button>
+        <button class="chip" data-v="micro" aria-pressed="false">micro 10–100k</button>
+        <button class="chip" data-v="medio" aria-pressed="false">médio 100–500k</button>
+        <button class="chip" data-v="grande" aria-pressed="false">grande 500k+</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span>nicho</span>
+      <div class="chips" id="fNiche">
+        <button class="chip" data-v="all" aria-pressed="true">todos</button>
+        <button class="chip" data-v="agro" aria-pressed="false">agro</button>
+        <button class="chip" data-v="psico" aria-pressed="false">psicologia</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span>ordenar por</span>
+      <div class="chips" id="fSort">
+        <button class="chip" data-v="score" aria-pressed="true">desvio da média</button>
+        <button class="chip" data-v="abs" aria-pressed="false">engajamento bruto</button>
+        <button class="chip" data-v="vel" aria-pressed="false">velocidade 24h</button>
+      </div>
+    </div>
+    <button class="refresh" id="btnRefresh"><span class="ic">↻</span> atualizar agora</button>
+  </div>
+
+  <div class="board">
+    <div class="rows" id="rows"></div>
+
+    <aside class="inspector" id="inspector" aria-live="polite">
+      <div class="insp-head">
+        <span class="lbl">inspetor de criativo</span>
+        <a id="permalink" href="#" target="_blank" rel="noopener">abrir perfil ↗</a>
+      </div>
+      <div class="stage"><div class="stack" id="stack" tabindex="0" role="group" aria-label="Slides do carrossel — use as setas"></div></div>
+      <div class="flip">
+        <button id="prev" aria-label="Slide anterior">←</button>
+        <span class="cnt" id="cnt">1/6</span>
+        <div class="dots" id="dots"></div>
+        <button id="next" aria-label="Próximo slide">→</button>
+      </div>
+      <div class="attrs">
+        <h3>leitura de design</h3>
+        <dl id="attrList"></dl>
+      </div>
+      <div class="numbers" id="nums"></div>
+      <p class="note" id="note"></p>
+    </aside>
+  </div>
+
+  <footer>
+    <p><b>O que é real neste protótipo:</b> a estrutura de dados, o cálculo de desvio, a leitura de atributos de design e o comportamento de atualização. Os perfis e números são fictícios.</p>
+    <p>Na versão conectada, cada linha vem de um snapshot gravado do <code>business_discovery</code> (likes, comentários, permalink, media_type=CAROUSEL_ALBUM) e os campos de design saem de classificação multimodal dos slides. Saves e compartilhamentos não existem na API para perfis de terceiros — o desvio usa likes + comentários.</p>
+  </footer>
+</div>
+
+<script>
+const PAL = {
+  verde:  {bg:"#14261A", fg:"#E9F0D9", ac:"#C9D94F", n:"verde-terra"},
+  creme:  {bg:"#F2EAD9", fg:"#22201C", ac:"#C0552F", n:"creme editorial"},
+  petrol: {bg:"#0F2027", fg:"#E6F2F3", ac:"#F0A93B", n:"petrol / âmbar"},
+  rosa:   {bg:"#F6E7E4", fg:"#2A1D1C", ac:"#B4553F", n:"rosa argila"},
+  branco: {bg:"#FBFBF9", fg:"#16181A", ac:"#2B5F4A", n:"branco clínico"},
+  carvao: {bg:"#191919", fg:"#F3F1EC", ac:"#E8B84B", n:"carvão / mostarda"}
+};
+
+const DATA = [
+  { at:"fazendadedados", nicho:"agro", followers:4100, tier:"nano", pal:"petrol",
+    h:"Sua planilha de custo está mentindo",
+    likes:1284, comments:196, score:6.9, vel:[2,5,14,44,78,92,96,100],
+    gancho:"acusação direta", dens:"média", tipo:"sans condensada", face:"não",
+    slides:[
+      ["erro nº 1","Sua planilha de custo está mentindo","E o problema não é a fórmula. É o que você não colocou nela."],
+      ["o furo","Você lançou o diesel. Esqueceu a hora-máquina.","Depreciação de trator não aparece no extrato — mas sai do seu bolso todo ano."],
+      ["a conta","R$ 41/ha de custo invisível","Média das 12 propriedades que abrimos a planilha nos últimos 6 meses."],
+      ["como corrigir","Três linhas que faltam na sua","Depreciação, custo de oportunidade da terra, e retirada do produtor."],
+      ["o resultado","Margem real: 8%. Não 19%.","O mesmo talhão, a mesma safra, só a conta certa."],
+      ["próximo passo","Baixe o modelo no link da bio","Planilha aberta, sem cadastro."]
+    ]},
+
+  { at:"agrodescomplica.br", nicho:"agro", followers:34200, tier:"micro", pal:"verde",
+    h:"3 erros na calagem que custam 12 sacas/ha",
+    likes:4812, comments:318, score:5.2, vel:[4,11,30,58,71,84,93,100],
+    gancho:"número + perda", dens:"alta", tipo:"grotesca pesada", face:"sim (slide 1)",
+    slides:[
+      ["solo","3 erros na calagem que custam 12 sacas por hectare","O terceiro é o que quase ninguém enxerga."],
+      ["erro 1","Calcário aplicado sem análise recente","Análise de mais de 2 anos é chute com cara de dado."],
+      ["erro 2","Incorporação rasa demais","Calcário não caminha no perfil. Onde você deixou, ele fica."],
+      ["erro 3","Ignorar o PRNT do produto","Dois calcários com a mesma tonelagem podem entregar metade do efeito."],
+      ["a conta","12 sacas/ha ≈ R$ 1.560/ha","Preço médio da saca na safra passada."],
+      ["checklist","O que fazer antes da próxima aplicação","Análise, cálculo pelo PRNT, incorporação até 20cm."],
+      ["salve","Salve para a próxima janela","Você vai precisar disso em 4 meses."]
+    ]},
+
+  { at:"mentesaudavel.dia", nicho:"psico", followers:8700, tier:"nano", pal:"rosa",
+    h:"Ansiedade não é falta de fé",
+    likes:2104, comments:402, score:4.6, vel:[6,18,41,66,80,88,95,100],
+    gancho:"contradição de crença", dens:"baixa", tipo:"serifa alto contraste", face:"não",
+    slides:[
+      ["leia com calma","Ansiedade não é falta de fé","E dizer isso para alguém não é ajuda. É mais uma culpa."],
+      ["o que ela é","Uma resposta do corpo, não um caráter","O sistema de alarme dispara antes de você escolher qualquer coisa."],
+      ["o que não ajuda","“Confia mais.” “Pensa positivo.”","Frases que transformam sintoma em falha moral."],
+      ["o que ajuda","Nomear, respirar, e buscar ajuda","Nessa ordem, sem pressa."],
+      ["se você convive","Você não precisa resolver","Precisa ficar. Isso já é muito."],
+      ["marque","Marque quem precisa ler isso hoje","Sem julgamento nos comentários."]
+    ]},
+
+  { at:"psi.emlinguagem", nicho:"psico", followers:61000, tier:"micro", pal:"branco",
+    h:"O que ninguém te conta sobre terapia no SUS",
+    likes:5940, comments:511, score:3.8, vel:[3,9,26,52,74,86,94,100],
+    gancho:"informação privilegiada", dens:"média", tipo:"sans humanista", face:"sim (slide 6)",
+    slides:[
+      ["acesso","O que ninguém te conta sobre terapia no SUS","Existe. Mas o caminho não é o que você imagina."],
+      ["porta de entrada","Não é o CAPS. É a UBS.","O CAPS atende casos graves e persistentes. A maioria começa antes."],
+      ["o pedido certo","Peça avaliação em saúde mental","Palavra que abre a fila certa dentro da unidade."],
+      ["a espera","Grupos costumam abrir antes do individual","E grupo funciona — a literatura é sólida nisso."],
+      ["alternativas","Clínicas-escola de universidades","Valor social, supervisão de professor, prontuário sério."],
+      ["compartilhe","Alguém no seu WhatsApp precisa disso","Encaminhar informação também é cuidado."]
+    ]},
+
+  { at:"clinica.vinculo", nicho:"psico", followers:23400, tier:"micro", pal:"creme",
+    h:"5 frases que sabotam a autonomia do seu filho",
+    likes:2870, comments:288, score:3.1, vel:[5,14,33,55,70,82,91,100],
+    gancho:"lista + culpa leve", dens:"alta", tipo:"serifa editorial", face:"não",
+    slides:[
+      ["parentalidade","5 frases que sabotam a autonomia do seu filho","Todas ditas com amor. É isso que as torna difíceis de ver."],
+      ["frase 1","“Deixa que eu faço, é mais rápido”","Ensina que a competência é sua, não dele."],
+      ["frase 2","“Não foi nada, para de chorar”","Ensina que o que ele sente não é dado confiável."],
+      ["frase 3","“Você é o mais inteligente da sala”","Transfere o valor para o resultado."],
+      ["troque por","“Quer tentar sozinho? Estou aqui.”","Presença sem intervenção é a base da autonomia."],
+      ["salve","Salve e releia no fim do dia ruim","Ninguém acerta em tempo real."]
+    ]},
+
+  { at:"agrotech.campo", nicho:"agro", followers:78000, tier:"micro", pal:"carvao",
+    h:"Drone x pulverizador: o custo real por hectare",
+    likes:6120, comments:342, score:2.4, vel:[7,21,44,63,77,86,94,100],
+    gancho:"comparação de custo", dens:"média", tipo:"grotesca técnica", face:"não",
+    slides:[
+      ["comparativo","Drone x pulverizador: o custo real por hectare","Somando o que os anúncios deixam de fora."],
+      ["capex","Drone: R$ 190 mil. Autopropelido: R$ 1,4 mi.","Ponto para o drone — e é aqui que a conversa costuma parar."],
+      ["rendimento","20 ha/h contra 120 ha/h","A conta vira quando a janela de aplicação é curta."],
+      ["o custo escondido","Bateria, operador certificado, recarga em campo","Três linhas que ninguém coloca na proposta."],
+      ["quando o drone ganha","Talhão irregular, área alagada, aplicação localizada","E como complemento, quase sempre."],
+      ["veredito","Não é substituição. É composição.","Quem trocou 100% se arrependeu na safra seguinte."]
+    ]},
+
+  { at:"canaviallab", nicho:"agro", followers:187000, tier:"medio", pal:"verde",
+    h:"O mapa do plantio 2026 em 10 slides",
+    likes:9330, comments:214, score:2.1, vel:[12,29,50,68,79,88,95,100],
+    gancho:"promessa de mapa", dens:"alta", tipo:"grotesca pesada", face:"não",
+    slides:[
+      ["safra 2026","O mapa do plantio em 10 slides","Onde a área cresce, onde ela encolhe, e por quê."],
+      ["centro-oeste","Área estável, produtividade em alta","Ganho vem de manejo, não de expansão."],
+      ["matopiba","A fronteira que ainda se move","E o custo logístico que come o prêmio."],
+      ["sul","Clima manda mais que preço","Três anos seguidos de anomalia mudaram o calendário."],
+      ["leitura","O que isso muda para você","Se você arrenda, a conversa de renda muda de tom."]
+    ]},
+
+  { at:"terapiadebolso", nicho:"psico", followers:243000, tier:"medio", pal:"rosa",
+    h:"Burnout: o corpo avisa antes",
+    likes:11480, comments:604, score:1.9, vel:[15,34,55,70,81,89,96,100],
+    gancho:"sinal corporal", dens:"baixa", tipo:"serifa alto contraste", face:"sim (slide 1)",
+    slides:[
+      ["atenção","Burnout: o corpo avisa antes","Meses antes. Em sinais que você aprendeu a chamar de cansaço."],
+      ["sinal 1","O sono que não descansa","Você dorme 8 horas e acorda como se tivesse trabalhado."],
+      ["sinal 2","O domingo à noite","Se a ansiedade tem horário marcado, ela tem endereço."],
+      ["sinal 3","O cinismo novo","Você começou a achar graça em coisas que antes te mobilizavam."],
+      ["importante","Burnout é ocupacional","O diagnóstico é clínico e o contexto de trabalho faz parte dele."],
+      ["próximo passo","Procure um profissional","Descanso ajuda, mas raramente resolve sozinho."]
+    ]},
+
+  { at:"solo.vivo.ensino", nicho:"agro", followers:9900, tier:"nano", pal:"creme",
+    h:"Plantio direto em 7 passos",
+    likes:1420, comments:132, score:2.8, vel:[8,20,38,58,72,84,93,100],
+    gancho:"tutorial numerado", dens:"alta", tipo:"sans humanista", face:"não",
+    slides:[
+      ["manejo","Plantio direto em 7 passos","Do resto da cultura anterior ao fechamento do sulco."],
+      ["passo 1","Palhada: cobertura antes de tudo","Sem 6 t/ha de matéria seca, o resto não se sustenta."],
+      ["passo 2","Não revolva. Nem “só um pouco”","Uma gradagem apaga três anos de estrutura."],
+      ["passo 3","Rotação de verdade","Duas espécies não são rotação. São alternância."],
+      ["passo 7","Paciência: o sistema responde no ano 3","Quem desiste no ano 2 conclui a coisa errada."]
+    ]},
+
+  { at:"agrobusiness.hoje", nicho:"agro", followers:612000, tier:"grande", pal:"petrol",
+    h:"Safra recorde em 3 gráficos",
+    likes:14200, comments:388, score:1.3, vel:[22,44,62,74,84,91,96,100],
+    gancho:"dado + gráfico", dens:"baixa", tipo:"grotesca técnica", face:"não",
+    slides:[
+      ["mercado","Safra recorde em 3 gráficos","O volume subiu. A margem, não."],
+      ["gráfico 1","Produção total por ano","Décima alta em doze safras."],
+      ["gráfico 2","Custo de insumo por saca","A linha que ninguém coloca no mesmo eixo."],
+      ["gráfico 3","Margem líquida média","Recorde de volume, margem de 2019."]
+    ]}
+];
+
+let state = {tier:"all", niche:"all", sort:"score", sel:0, slide:0};
+const fmt = n => n.toLocaleString("pt-BR");
+const kf  = n => n >= 1000 ? (n/1000).toFixed(n >= 100000 ? 0 : 1).replace(".",",")+"k" : n;
+const tierName = {nano:"nano", micro:"micro", medio:"médio", grande:"grande"};
+
+function engRate(d){ return ((d.likes + d.comments) / d.followers * 100); }
+function vel24(d){ return d.vel[3]; }
+
+function visible(){
+  let out = DATA.filter(d =>
+    (state.tier === "all" || d.tier === state.tier) &&
+    (state.niche === "all" || d.nicho === state.niche));
+  const key = state.sort === "score" ? d => d.score
+            : state.sort === "abs"   ? d => d.likes + d.comments
+            :                          d => vel24(d);
+  return out.sort((a,b) => key(b) - key(a));
+}
+
+function sparkline(vel, color){
+  const w = 96, h = 30, max = 100;
+  const pts = vel.map((v,i) => [i/(vel.length-1)*w, h - (v/max)*(h-4) - 2]);
+  const path = pts.map((p,i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = path + ` L${w} ${h} L0 ${h} Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <path d="${area}" fill="${color}" opacity=".12"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.4" stroke-linejoin="round"/>
+    <circle cx="${w}" cy="${pts[pts.length-1][1].toFixed(1)}" r="2" fill="${color}"/>
+  </svg>`;
+}
+
+function renderRows(flashIdx){
+  const list = visible();
+  const el = document.getElementById("rows");
+  if(!list.length){
+    el.innerHTML = `<p style="padding:34px 0;color:var(--bone-faint)">Nenhum carrossel nessa combinação de filtros. Solte a faixa de perfil ou o nicho.</p>`;
+    return;
+  }
+  el.innerHTML = list.map((d,i) => {
+    const p = PAL[d.pal];
+    const cls = d.score >= 5 ? "hot" : d.score >= 2 ? "up" : "";
+    const col = d.score >= 5 ? "#E4674F" : "#F0A93B";
+    const cur = DATA.indexOf(d) === state.sel;
+    return `<button class="row${flashIdx ? " flash" : ""}" data-i="${DATA.indexOf(d)}" aria-current="${cur}">
+      <span class="rk">${String(i+1).padStart(2,"0")}</span>
+      <span class="thumb" style="background:${p.bg};color:${p.fg}">
+        <i style="color:${p.ac}">${d.slides[0][0]}</i>${d.slides[0][1]}
+      </span>
+      <span class="meta">
+        <span class="h">${d.h}</span>
+        <span class="s">
+          <span class="at">@${d.at}</span>
+          <span class="tier ${d.tier}">${tierName[d.tier]}</span>
+          <span>${kf(d.followers)} seg.</span>
+          <span>${fmt(d.likes)} ♥</span>
+          <span>${fmt(d.comments)} 💬</span>
+          <span>${d.slides.length} slides</span>
+        </span>
+      </span>
+      ${sparkline(d.vel, col)}
+      <span class="score ${cls}">
+        <b>${d.score.toFixed(1).replace(".",",")}×</b>
+        <span>da média</span>
+      </span>
+    </button>`;
+  }).join("");
+
+  el.querySelectorAll(".row").forEach(r => r.addEventListener("click", () => {
+    state.sel = +r.dataset.i; state.slide = 0;
+    renderRows(); renderInspector();
+    if(window.innerWidth <= 1080) document.getElementById("inspector").scrollIntoView({behavior:"smooth", block:"start"});
+  }));
+}
+
+function renderInspector(){
+  const d = DATA[state.sel], p = PAL[d.pal];
+
+  document.getElementById("permalink").textContent = "@" + d.at + " ↗";
+  document.getElementById("permalink").href = "https://instagram.com/" + d.at;
+
+  document.getElementById("stack").innerHTML = d.slides.map((s,i) => {
+    const off = i - state.slide;
+    const pos = off < 0 ? "x" : off > 3 ? "3" : String(off);
+    return `<article class="slide" data-pos="${pos}" style="background:${p.bg};color:${p.fg}" aria-hidden="${i !== state.slide}">
+      <span class="kick" style="color:${p.ac}">${s[0]}</span>
+      <h2 class="ttl">${s[1]}</h2>
+      <p class="bd">${s[2]}</p>
+      <span class="num">${i+1}/${d.slides.length}</span>
+    </article>`;
+  }).join("");
+
+  document.getElementById("cnt").textContent = (state.slide+1) + "/" + d.slides.length;
+  document.getElementById("dots").innerHTML = d.slides.map((_,i) =>
+    `<span class="dot${i === state.slide ? " on" : ""}"></span>`).join("");
+  document.getElementById("prev").disabled = state.slide === 0;
+  document.getElementById("next").disabled = state.slide === d.slides.length-1;
+
+  document.getElementById("attrList").innerHTML = `
+    <div><dt>tipo de gancho</dt><dd>${d.gancho}</dd></div>
+    <div><dt>densidade de texto</dt><dd>${d.dens}</dd></div>
+    <div><dt>tipografia</dt><dd>${d.tipo}</dd></div>
+    <div><dt>rosto humano</dt><dd>${d.face}</dd></div>
+    <div class="full"><dt>paleta dominante</dt><dd>${p.n}
+      <span class="swatches">
+        <span class="sw" style="background:${p.bg}"></span>
+        <span class="sw" style="background:${p.fg}"></span>
+        <span class="sw" style="background:${p.ac}"></span>
+      </span></dd></div>`;
+
+  document.getElementById("nums").innerHTML = `
+    <div><dt>taxa eng.</dt><dd>${engRate(d).toFixed(1).replace(".",",")}%</dd></div>
+    <div><dt>vel. 24h</dt><dd>${vel24(d)}%</dd></div>
+    <div><dt>faixa</dt><dd>${tierName[d.tier]}</dd></div>`;
+
+  const pct = Math.round((d.score - 1) * 100);
+  document.getElementById("note").innerHTML =
+    `Este carrossel está <b>${pct}% acima</b> da média de engajamento das últimas 30 publicações de @${d.at}. ` +
+    `<b>${vel24(d)}%</b> do engajamento total chegou nas primeiras 24h — ` +
+    (vel24(d) >= 50 ? "curva de pico, o alcance veio de fora dos seguidores." : "curva lenta, alcance concentrado na base.");
+}
+
+/* filtros */
+function bindChips(id, key){
+  document.getElementById(id).addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if(!b) return;
+    document.querySelectorAll(`#${id} .chip`).forEach(c => c.setAttribute("aria-pressed", c === b));
+    state[key] = b.dataset.v;
+    const list = visible();
+    if(list.length && !list.includes(DATA[state.sel])){ state.sel = DATA.indexOf(list[0]); state.slide = 0; renderInspector(); }
+    renderRows();
+  });
+}
+bindChips("fTier","tier"); bindChips("fNiche","niche"); bindChips("fSort","sort");
+
+/* folhear */
+function flip(dir){
+  const d = DATA[state.sel];
+  state.slide = Math.max(0, Math.min(d.slides.length-1, state.slide + dir));
+  renderInspector();
+}
+document.getElementById("prev").addEventListener("click", () => flip(-1));
+document.getElementById("next").addEventListener("click", () => flip(1));
+document.getElementById("stack").addEventListener("keydown", e => {
+  if(e.key === "ArrowRight"){ flip(1); e.preventDefault(); }
+  if(e.key === "ArrowLeft"){ flip(-1); e.preventDefault(); }
+});
+document.getElementById("stack").addEventListener("click", () => flip(1));
+
+/* snapshot simulado */
+document.getElementById("btnRefresh").addEventListener("click", e => {
+  const btn = e.currentTarget;
+  btn.classList.add("spin"); setTimeout(() => btn.classList.remove("spin"), 620);
+
+  DATA.forEach(d => {
+    const g = 1 + (Math.random()*0.09 - 0.02);
+    d.likes = Math.round(d.likes * g);
+    d.comments = Math.round(d.comments * (1 + (Math.random()*0.11 - 0.02)));
+    d.score = Math.max(0.6, +(d.score * (1 + (Math.random()*0.14 - 0.07))).toFixed(1));
+    d.vel = d.vel.map(v => Math.min(100, Math.round(v * (1 + (Math.random()*0.06 - 0.02)))));
+  });
+
+  const now = new Date();
+  document.getElementById("lastRead").textContent =
+    String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
+  document.getElementById("statSpikes").textContent = DATA.filter(d => d.score >= 3).length;
+  document.getElementById("statTop").textContent =
+    Math.max(...DATA.map(d => d.score)).toFixed(1).replace(".",",") + "×";
+  document.getElementById("statNext").textContent = "05:59";
+
+  renderRows(true); renderInspector();
+});
+
+renderRows(); renderInspector();
+
+/* ============ entrada por passkey (mock da cerimônia WebAuthn) ============ */
+const gate = document.getElementById("gate");
+const gStatus = document.getElementById("gateStatus");
+const gGo = document.getElementById("gateGo");
+const gTitle = document.getElementById("gateTitle");
+const gSub = document.getElementById("gateSub");
+const toggleMode = document.getElementById("toggleMode");
+const fakeLink = document.getElementById("fakeLink");
+let mode = "signin", busy = false;
+
+/* nome do autenticador conforme o aparelho — igual ao que o prompt real mostra */
+const ua = navigator.userAgent;
+document.getElementById("bioName").textContent =
+  /iPhone|iPad|iPod/.test(ua) ? "Face ID" :
+  /Macintosh/.test(ua)        ? "Touch ID" :
+  /Android/.test(ua)          ? "a biometria do aparelho" :
+  /Windows/.test(ua)          ? "o Windows Hello" : "a chave de acesso";
+
+function setStatus(txt, kind){
+  gStatus.textContent = txt;
+  gStatus.className = "status" + (kind ? " " + kind : "");
+}
+function setMode(m){
+  mode = m;
+  const reg = m === "register";
+  gTitle.innerHTML = reg ? 'Cadastre <em>este aparelho.</em>' : 'Entre com o <em>seu aparelho.</em>';
+  gSub.textContent = reg
+    ? "Uma chave fica guardada aqui. Cadastre um segundo aparelho depois — se este sumir, você continua entrando."
+    : "Sem senha. O celular confirma quem você é e manda só a assinatura.";
+  gGo.firstChild.textContent = reg ? "Cadastrar com " : "Entrar com ";
+  toggleMode.textContent = reg ? "já tenho acesso? entrar" : "primeiro acesso? cadastrar este aparelho";
+  gate.dataset.state = "idle";
+  setStatus(reg ? "O sistema vai pedir sua confirmação uma vez." : "Toque para abrir a verificação do sistema.");
+}
+toggleMode.addEventListener("click", () => setMode(mode === "signin" ? "register" : "signin"));
+
+function unlock(){
+  document.body.classList.remove("locked");
+  document.getElementById("btnRefresh").focus();
+}
+
+/* cerimônia simulada: desafio → prompt do sistema → verificação */
+gGo.addEventListener("click", () => {
+  if(busy) return;
+  busy = true; gGo.disabled = true;
+  gate.dataset.state = "scanning";
+  setStatus("Aguardando confirmação do sistema…");
+
+  setTimeout(() => {
+    gate.dataset.state = "ok";
+    setStatus(mode === "register" ? "Aparelho cadastrado. Entrando…" : "Identidade confirmada. Entrando…", "good");
+    setTimeout(() => { unlock(); busy = false; gGo.disabled = false; setMode("signin"); }, 700);
+  }, 1900);
+});
+
+/* cancelar com Esc durante a verificação — o caminho de erro que mais acontece */
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && gate.dataset.state === "scanning"){
+    gate.dataset.state = "err"; busy = false; gGo.disabled = false;
+    setStatus("Verificação cancelada. Toque de novo ou receba um link por e-mail.", "bad");
+  }
+});
+
+/* plano B: link por e-mail, para quando o aparelho cadastrado não está com você */
+document.getElementById("sendLink").addEventListener("click", () => {
+  const v = document.getElementById("mail").value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){
+    setStatus("Esse e-mail está incompleto. Confira o endereço.", "bad");
+    document.getElementById("mail").focus();
+    return;
+  }
+  setStatus("Link enviado para " + v + ". Vale por 15 minutos.", "good");
+  fakeLink.classList.remove("hidden");
+});
+fakeLink.addEventListener("click", () => { fakeLink.classList.add("hidden"); unlock(); });
+
+document.getElementById("btnLock").addEventListener("click", () => {
+  document.body.classList.add("locked");
+  setMode("signin");
+  gGo.focus();
+});
+
+setMode("signin");
+</script>
+</body>
+</html>
